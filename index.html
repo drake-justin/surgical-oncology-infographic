@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preoperative Surgical Oncology Case Conference Charter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Quattrocento&display=swap" rel="stylesheet">
+    <!--
+    Narrative & Structure Plan:
+    The infographic visually translates the formal charter into a digestible narrative. It starts with the high-level mission, identifies the key learning objectives for participants, details the roles and workflow in a clear process-oriented section, and finally breaks down the meeting's structure using quantitative charts. A new AI-powered section provides practical tools for case preparation. The flow guides the user from the "why" to the "what," "who," "how," and now "how to prepare" for the conference.
+
+    Color Palette Chosen: ECU Institutional - Purple: #592A8A, Dark Purple: #41215E, Gold: #FEC923, Dark Magenta: #77216F, Grey: #6C6D68, Teal: #00818F.
+
+    Visualization Selection & Justification:
+    1.  Data: Conference Duration (60 mins) -> Goal: Inform -> Visualization: Single Big Number.
+    2.  Data: Conference Objectives -> Goal: Organize -> Visualization: Styled Info Cards.
+    3.  Data: Participant Roles & Responsibilities -> Goal: Compare/Organize -> Visualization: Three-column layout.
+    4.  Data: Weekly Conference Workflow -> Goal: Organize (Process) -> Visualization: Custom Flowchart.
+    5.  Data: Meeting Agenda Time Allocation -> Goal: Compare (Composition) -> Visualization: Donut Chart (Chart.js/Canvas).
+    6.  Data: Core Case Discussion Points -> Goal: Compare (Attributes) -> Visualization: Radar Chart (Chart.js/Canvas).
+    7.  Feature: AI Case Prep -> Goal: Assist -> Visualization: Interactive Form with Gemini API integration.
+
+    Final Confirmation: NEITHER Mermaid JS NOR SVG were used anywhere in the output. All visuals are pure HTML/CSS or rendered on HTML Canvas elements by Chart.js.
+    -->
+    <style>
+        body {
+            font-family: 'Quattrocento', serif;
+            background-color: #41215E; /* Dark Purple */
+            color: #FFFFFF;
+        }
+        h1, h2, h3, h4, .font-headline {
+             font-family: 'Oswald', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .card {
+            background-color: #592A8A; /* Purple */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+            border: 1px solid #77216F; /* Dark Magenta */
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .flowchart-step {
+            background-color: #592A8A; /* Purple */
+            border: 1px solid #77216F; /* Dark Magenta */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            flex-grow: 1;
+        }
+        .flowchart-arrow {
+            font-size: 2.5rem;
+            color: #FEC923; /* Gold */
+            line-height: 1;
+            align-self: center;
+        }
+        .ai-assistant-container {
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid #592A8A;
+            border-radius: 0.75rem;
+            padding: 2rem;
+        }
+        .ai-input, .ai-output {
+            background-color: #41215E;
+            color: #FFFFFF;
+            border: 1px solid #77216F;
+            border-radius: 0.5rem;
+        }
+        .ai-button {
+            background-color: #FEC923;
+            color: #41215E;
+            font-family: 'Oswald', sans-serif;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        .ai-button:hover {
+            background-color: #EAC01E;
+        }
+        .ai-button:disabled {
+            background-color: #6C6D68;
+            cursor: not-allowed;
+        }
+        .loader {
+            border: 4px solid #592A8A;
+            border-top: 4px solid #FEC923;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        <header class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4 font-headline">Preoperative Surgical Oncology Conference</h1>
+            <p class="text-xl md:text-2xl text-gray-200 font-light">A Visual Charter for Excellence in Surgical Planning & Education</p>
+        </header>
+
+        <main>
+            <section id="mission" class="mb-20">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                    <div class="md:col-span-2">
+                        <h2 class="text-3xl font-bold mb-4 text-[#FEC923] font-headline">Our Mission</h2>
+                        <p class="text-lg text-gray-200">
+                            To provide a structured, educational forum for the review of upcoming surgical oncology cases. Our primary purpose is to enhance patient safety, optimize surgical planning, and foster a collaborative learning environment for all participants.
+                        </p>
+                    </div>
+                    <div class="card text-center flex flex-col justify-center items-center p-8 bg-[#00818F]">
+                        <span class="text-7xl font-black text-white font-headline">60</span>
+                        <span class="text-2xl font-bold text-[#FEC923] font-headline">Minutes</span>
+                        <p cl
