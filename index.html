@@ -330,17 +330,18 @@
                 // This is the secure URL for your Netlify Function endpoint.
                 const apiUrl = `/.netlify/functions/gemini-proxy`;
 
-                // The prompt combines a role, the case context, and the user's specific query.
-                const fullPrompt = `You are an expert surgical oncology assistant. Based on the following case context, please answer the user's question. \n\nCONTEXT:\n${caseContext}\n\nQUESTION:\n${userQuery}`;
+                // The prompt for the Gemini API combines a role, the case context, and the user's specific query.
+                const systemPrompt = `You are an expert surgical oncology assistant. Based on the following case context, please answer the user's question. \n\nCONTEXT:\n${caseContext}\n\nQUESTION:\n`;
 
                 try {
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
-                            // The Netlify function expects a "prompt" key, but we're sending the full context here.
-                            prompt: fullPrompt,
-                            text: "" // The 'text' field is no longer needed as context is in the prompt
+                            // The Netlify function expects a "prompt" and a "text" field.
+                            // We will use the 'prompt' for the system instructions and the 'text' for the user's query.
+                            prompt: systemPrompt,
+                            text: userQuery
                         })
                     });
                     
