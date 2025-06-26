@@ -129,6 +129,25 @@
             width: 100%;
             margin-bottom: 1rem;
         }
+        .ai-button {
+            background-color: #FEC923;
+            color: #41215E;
+            font-family: 'Oswald', sans-serif;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .ai-button:hover {
+            background-color: #EAC01E;
+        }
+        .ai-button:disabled {
+            background-color: #6C6D68;
+            cursor: not-allowed;
+            color: #A9A9A9;
+        }
         #send-btn {
             background-color: #FEC923;
             color: #41215E;
@@ -284,11 +303,15 @@
                     <div>
                         <textarea id="caseDetails" rows="6" placeholder="Step 1: Provide Case Context here first. This context will be used for all your questions below. Example: 58 y/o male with a 4cm mass in the pancreatic head..."></textarea>
                     </div>
+                    <div class="flex flex-wrap gap-4 justify-center my-4">
+                        <button id="generateSummaryBtn" class="ai-button">✨ Generate Case Summary</button>
+                        <button id="generateQuestionsBtn" class="ai-button">✨ Generate Discussion Questions</button>
+                    </div>
                     <div id="chat-window" class="flex flex-col">
                         <!-- Chat messages will be appended here -->
                     </div>
                     <div class="chat-input-container">
-                        <input type="text" id="chat-input" placeholder="Step 2: Ask a question... (e.g., 'Summarize this case')">
+                        <input type="text" id="chat-input" placeholder="Step 2: Click a button above or ask a follow-up question...">
                         <button id="send-btn">Send</button>
                     </div>
                 </div>
@@ -306,7 +329,11 @@
             const chatWindow = document.getElementById('chat-window');
             const chatInput = document.getElementById('chat-input');
             const sendBtn = document.getElementById('send-btn');
+            const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+            const generateQuestionsBtn = document.getElementById('generateQuestionsBtn');
             
+            const allButtons = [sendBtn, generateSummaryBtn, generateQuestionsBtn];
+
             const addMessage = (message, sender) => {
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('chat-message', sender === 'user' ? 'user-message' : 'bot-message');
@@ -316,13 +343,13 @@
             };
 
             const callGemini = async (userQuery) => {
-                sendBtn.disabled = true;
+                allButtons.forEach(btn => btn.disabled = true);
                 addMessage('Thinking...', 'bot');
 
                 const caseContext = caseDetailsInput.value;
                 if (!caseContext.trim()) {
                     addMessage('Please provide the case context in the text area above before asking questions.', 'bot');
-                    sendBtn.disabled = false;
+                    allButtons.forEach(btn => btn.disabled = false);
                     chatWindow.removeChild(chatWindow.lastChild); // Remove "Thinking..."
                     return;
                 }
@@ -338,8 +365,6 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
-                            // The Netlify function expects a "prompt" and a "text" field.
-                            // We will use the 'prompt' for the system instructions and the 'text' for the user's query.
                             prompt: systemPrompt,
                             text: userQuery
                         })
@@ -367,7 +392,7 @@
                     chatWindow.removeChild(chatWindow.lastChild); // Remove "Thinking..."
                     addMessage(`An error occurred: ${error.message}. Check the console for more details.`, 'bot');
                 } finally {
-                    sendBtn.disabled = false;
+                    allButtons.forEach(btn => btn.disabled = false);
                 }
             };
             
@@ -387,7 +412,19 @@
                 }
             });
 
-            addMessage("Hello! Please enter the case details above. Then, you can ask me to summarize the case, list discussion questions, or ask anything else about the patient.", 'bot');
+            generateSummaryBtn.addEventListener('click', () => {
+                const query = "Generate a concise case summary for a preoperative conference presentation. Structure the summary with these headings: Indication for Surgery, Anatomic Considerations, Proposed Surgical Approach, and Staging Implications.";
+                addMessage("Generate Case Summary", "user");
+                callGemini(query);
+            });
+
+            generateQuestionsBtn.addEventListener('click', () => {
+                const query = "Generate 3-5 thought-provoking discussion questions suitable for an attending to ask residents and medical students during a preoperative conference. The questions should probe critical thinking about surgical approach, potential complications, and alternative management strategies.";
+                addMessage("Generate Discussion Questions", "user");
+                callGemini(query);
+            });
+
+            addMessage("Hello! Please enter the case details above. You can then click a button for common tasks or ask me any question about the case.", 'bot');
 
 
             const wrapLabel = (str, maxLen = 16) => {
