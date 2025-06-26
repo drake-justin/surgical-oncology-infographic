@@ -127,7 +127,6 @@
         }
         #caseDetails {
             width: 100%;
-            margin-bottom: 1rem;
         }
         .ai-button {
             background-color: #FEC923;
@@ -300,10 +299,10 @@
             <section id="ai-assistant" class="mb-12">
                 <h2 class="text-3xl font-bold text-center mb-10 text-[#FEC923] font-headline">AI-Powered Case Prep Chatbot</h2>
                 <div class="ai-assistant-container max-w-4xl mx-auto">
-                    <div>
+                    <div class="mb-4">
                         <textarea id="caseDetails" rows="6" placeholder="Step 1: Provide Case Context here first. This context will be used for all your questions below. Example: 58 y/o male with a 4cm mass in the pancreatic head..."></textarea>
                     </div>
-                    <div class="flex flex-wrap gap-4 justify-center my-4">
+                    <div class="flex flex-wrap gap-4 justify-center mb-4">
                         <button id="generateSummaryBtn" class="ai-button">✨ Generate Case Summary</button>
                         <button id="generateQuestionsBtn" class="ai-button">✨ Generate Discussion Questions</button>
                     </div>
@@ -314,6 +313,7 @@
                         <input type="text" id="chat-input" placeholder="Step 2: Click a button above or ask a follow-up question...">
                         <button id="send-btn">Send</button>
                     </div>
+                    <p class="text-xs text-gray-400 mt-4 text-center italic">Disclaimer: AI-generated content may be inaccurate. This tool is for educational purposes only and should not be used for clinical decision-making.</p>
                 </div>
             </section>
         </main>
