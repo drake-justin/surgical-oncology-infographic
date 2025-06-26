@@ -439,329 +439,328 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, getDocs, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // --- Chart Initialization (runs immediately) ---
-            const initializeCharts = () => {
-                const wrapLabel = (str, maxLen = 16) => {
-                    if (str.length <= maxLen) return str;
-                    const words = str.split(' ');
-                    let lines = [];
-                    let currentLine = '';
-                    for (const word of words) {
-                        if ((currentLine + ' ' + word).length > maxLen && currentLine.length > 0) {
-                            lines.push(currentLine);
-                            currentLine = word;
-                        } else {
-                            currentLine = currentLine ? `${currentLine} ${word}` : word;
-                        }
+        // --- Chart Initialization ---
+        const initializeCharts = () => {
+            const wrapLabel = (str, maxLen = 16) => {
+                if (str.length <= maxLen) return str;
+                const words = str.split(' ');
+                let lines = [];
+                let currentLine = '';
+                for (const word of words) {
+                    if ((currentLine + ' ' + word).length > maxLen && currentLine.length > 0) {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    } else {
+                        currentLine = currentLine ? `${currentLine} ${word}` : word;
                     }
-                    lines.push(currentLine);
-                    return lines;
-                };
-
-                const CHART_TOOLTIP_CONFIG = {
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                title: function(tooltipItems) {
-                                    const item = tooltipItems[0];
-                                    let label = item.chart.data.labels[item.dataIndex];
-                                    return Array.isArray(label) ? label.join(' ') : label;
-                                }
-                            }
-                        }
-                    }
-                };
-
-                const institutionalColors = ['#FEC923', '#77216F', '#00818F'];
-                Chart.defaults.font.family = "'Quattrocento', serif";
-                Chart.defaults.color = '#FFFFFF';
-
-                const agendaCtx = document.getElementById('agendaChart');
-                if (agendaCtx) {
-                    new Chart(agendaCtx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Resident Case Presentations', 'Open Forum & Wrap-up', 'Call to Order'],
-                            datasets: [{
-                                label: 'Minutes Allocated',
-                                data: [45, 10, 5],
-                                backgroundColor: institutionalColors,
-                                borderColor: '#41215E',
-                                borderWidth: 4,
-                                hoverOffset: 8
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                               ...CHART_TOOLTIP_CONFIG.plugins,
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        color: '#FFFFFF',
-                                        font: { size: 14, family: "'Oswald', sans-serif" }
-                                    }
-                                }
-                            },
-                            cutout: '50%'
-                        }
-                    });
                 }
+                lines.push(currentLine);
+                return lines;
+            };
 
-                const discussionCtx = document.getElementById('discussionChart');
-                if (discussionCtx) {
-                    new Chart(discussionCtx, {
-                        type: 'radar',
-                        data: {
-                            labels: [
-                                wrapLabel('Indication for Surgery'),
-                                wrapLabel('Anatomic Considerations'),
-                                wrapLabel('Proposed Surgical Approach'),
-                                wrapLabel('Staging Implications'),
-                                wrapLabel('Postoperative Care Plan')
-                            ],
-                            datasets: [{
-                                label: 'Depth of Review',
-                                data: [10, 10, 10, 10, 10],
-                                fill: true,
-                                backgroundColor: 'rgba(254, 201, 35, 0.3)',
-                                borderColor: '#FEC923',
-                                pointBackgroundColor: '#FEC923',
-                                pointBorderColor: '#fff',
-                                pointHoverBackgroundColor: '#fff',
-                                pointHoverBorderColor: '#FEC923'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                ...CHART_TOOLTIP_CONFIG.plugins,
-                                legend: { display: false }
-                            },
-                            scales: {
-                                r: {
-                                    angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
-                                    grid: { color: 'rgba(255, 255, 255, 0.2)' },
-                                    pointLabels: {
-                                        color: '#FFFFFF',
-                                        font: { size: 12, family: "'Quattrocento', serif" }
-                                    },
-                                    ticks: { display: false, backdropColor: 'transparent', stepSize: 2 }
-                                }
+            const CHART_TOOLTIP_CONFIG = {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                const item = tooltipItems[0];
+                                let label = item.chart.data.labels[item.dataIndex];
+                                return Array.isArray(label) ? label.join(' ') : label;
                             }
                         }
-                    });
+                    }
                 }
             };
-            
-            // --- Dynamic Features Initialization ---
-            const initializeDynamicFeatures = () => {
-                const firebaseConfig = {
-                  apiKey: "AIzaSyAGBUz_LbfSJLryVjiuCD9siqfP-hpWYSo",
-                  authDomain: "device-streaming-765469fa.firebaseapp.com",
-                  projectId: "device-streaming-765469fa",
-                  storageBucket: "device-streaming-765469fa.appspot.com",
-                  messagingSenderId: "1037027918151",
-                  appId: "1:1037027918151:web:14dece700b3ce7189d8c62"
-                };
-                
-                const app = initializeApp(firebaseConfig);
-                const db = getFirestore(app);
-                const auth = getAuth(app);
-                
-                const addCaseForm = document.getElementById('add-case-form');
-                const firebaseErrorBanner = document.getElementById('firebase-error-banner');
 
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        const userId = user.uid;
-                        const appId = firebaseConfig.projectId;
-                        const casesCollectionRef = collection(db, `artifacts/${appId}/public/data/cases`);
-                        
-                        const caseListBody = document.getElementById('case-list-body');
-                        const clearAllCasesBtn = document.getElementById('clear-all-cases-btn');
+            const institutionalColors = ['#FEC923', '#77216F', '#00818F'];
+            Chart.defaults.font.family = "'Quattrocento', serif";
+            Chart.defaults.color = '#FFFFFF';
 
-                        const renderCases = (cases) => {
-                            caseListBody.innerHTML = '';
-                            cases.forEach(caseItem => {
-                                const row = document.createElement('tr');
-                                row.innerHTML = `
-                                    <td>${caseItem.date}</td>
-                                    <td>${caseItem.attending}</td>
-                                    <td>${caseItem.diagnosis}</td>
-                                    <td>${caseItem.procedure}</td>
-                                    <td><button class="delete-btn" data-id="${caseItem.id}">❌</button></td>
-                                `;
-                                caseListBody.appendChild(row);
-                            });
-                        };
-
-                        const q = query(casesCollectionRef, orderBy("date", "asc"));
-                        onSnapshot(q, (snapshot) => {
-                            const cases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            renderCases(cases);
-                        }, (error) => console.error("Firestore snapshot error:", error));
-
-                        addCaseForm.addEventListener('submit', async (e) => {
-                            e.preventDefault();
-                            const newCase = {
-                                date: document.getElementById('caseDate').value,
-                                attending: document.getElementById('attending').value,
-                                diagnosis: document.getElementById('diagnosis').value,
-                                procedure: document.getElementById('procedure').value,
-                                createdAt: new Date(),
-                                addedBy: userId
-                            };
-                            try {
-                                await addDoc(casesCollectionRef, newCase);
-                                addCaseForm.reset();
-                            } catch (error) {
-                                console.error("Error adding document: ", error);
-                            }
-                        });
-                        
-                        caseListBody.addEventListener('click', async (e) => {
-                            if (e.target.classList.contains('delete-btn')) {
-                                const caseId = e.target.getAttribute('data-id');
-                                try {
-                                    await deleteDoc(doc(db, `artifacts/${appId}/public/data/cases`, caseId));
-                                } catch (error) {
-                                    console.error("Error removing document: ", error);
+            const agendaCtx = document.getElementById('agendaChart');
+            if (agendaCtx) {
+                new Chart(agendaCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Resident Case Presentations', 'Open Forum & Wrap-up', 'Call to Order'],
+                        datasets: [{
+                            label: 'Minutes Allocated',
+                            data: [45, 10, 5],
+                            backgroundColor: institutionalColors,
+                            borderColor: '#41215E',
+                            borderWidth: 4,
+                            hoverOffset: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                           ...CHART_TOOLTIP_CONFIG.plugins,
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#FFFFFF',
+                                    font: { size: 14, family: "'Oswald', sans-serif" }
                                 }
                             }
-                        });
-
-                        clearAllCasesBtn.addEventListener('click', async () => {
-                            if (prompt("This will delete all cases permanently. Type 'DELETE' to confirm.") === 'DELETE') {
-                                try {
-                                    const querySnapshot = await getDocs(casesCollectionRef);
-                                    const batch = writeBatch(db);
-                                    querySnapshot.forEach((doc) => batch.delete(doc.ref));
-                                    await batch.commit();
-                                } catch (error) {
-                                    console.error("Error clearing all documents: ", error);
-                                }
-                            }
-                        });
-
-                    } else {
-                        console.log("User is not authenticated. Trying to sign in anonymously.");
-                        signInAnonymously(auth).catch((error) => {
-                            console.error("Anonymous sign-in failed:", error);
-                             if (error.code === 'auth/operation-not-allowed' || error.code === 'auth/configuration-not-found') {
-                                 firebaseErrorBanner.innerHTML = '<strong>Action Required:</strong> Real-time features are disabled. Please go to your Firebase project, navigate to the Authentication -> Sign-in method tab, and enable the "Anonymous" sign-in provider.';
-                             } else {
-                                firebaseErrorBanner.textContent = 'Connection Error: Real-time features could not be initialized. Please check the console for details.';
-                             }
-                             firebaseErrorBanner.classList.remove('hidden');
-                             addCaseForm.style.display = 'none';
-                             document.getElementById('clear-all-cases-btn').style.display = 'none';
-                        });
+                        },
+                        cutout: '50%'
                     }
                 });
+            }
+
+            const discussionCtx = document.getElementById('discussionChart');
+            if (discussionCtx) {
+                new Chart(discussionCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: [
+                            wrapLabel('Indication for Surgery'),
+                            wrapLabel('Anatomic Considerations'),
+                            wrapLabel('Proposed Surgical Approach'),
+                            wrapLabel('Staging Implications'),
+                            wrapLabel('Postoperative Care Plan')
+                        ],
+                        datasets: [{
+                            label: 'Depth of Review',
+                            data: [10, 10, 10, 10, 10],
+                            fill: true,
+                            backgroundColor: 'rgba(254, 201, 35, 0.3)',
+                            borderColor: '#FEC923',
+                            pointBackgroundColor: '#FEC923',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: '#FEC923'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            ...CHART_TOOLTIP_CONFIG.plugins,
+                            legend: { display: false }
+                        },
+                        scales: {
+                            r: {
+                                angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
+                                grid: { color: 'rgba(255, 255, 255, 0.2)' },
+                                pointLabels: {
+                                    color: '#FFFFFF',
+                                    font: { size: 12, family: "'Quattrocento', serif" }
+                                },
+                                ticks: { display: false, backdropColor: 'transparent', stepSize: 2 }
+                            }
+                        }
+                    }
+                });
+            }
+        };
+        
+        // --- Dynamic Features Initialization ---
+        const initializeDynamicFeatures = () => {
+            const firebaseConfig = {
+              apiKey: "AIzaSyAGBUz_LbfSJLryVjiuCD9siqfP-hpWYSo",
+              authDomain: "device-streaming-765469fa.firebaseapp.com",
+              projectId: "device-streaming-765469fa",
+              storageBucket: "device-streaming-765469fa.appspot.com",
+              messagingSenderId: "1037027918151",
+              appId: "1:1037027918151:web:14dece700b3ce7189d8c62"
+            };
+            
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            const auth = getAuth(app);
+            
+            const addCaseForm = document.getElementById('add-case-form');
+            const firebaseErrorBanner = document.getElementById('firebase-error-banner');
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    const userId = user.uid;
+                    const appId = firebaseConfig.projectId;
+                    const casesCollectionRef = collection(db, `artifacts/${appId}/public/data/cases`);
+                    
+                    const caseListBody = document.getElementById('case-list-body');
+                    const clearAllCasesBtn = document.getElementById('clear-all-cases-btn');
+
+                    const renderCases = (cases) => {
+                        caseListBody.innerHTML = '';
+                        cases.forEach(caseItem => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${caseItem.date}</td>
+                                <td>${caseItem.attending}</td>
+                                <td>${caseItem.diagnosis}</td>
+                                <td>${caseItem.procedure}</td>
+                                <td><button class="delete-btn" data-id="${caseItem.id}">❌</button></td>
+                            `;
+                            caseListBody.appendChild(row);
+                        });
+                    };
+
+                    const q = query(casesCollectionRef, orderBy("date", "asc"));
+                    onSnapshot(q, (snapshot) => {
+                        const cases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderCases(cases);
+                    }, (error) => console.error("Firestore snapshot error:", error));
+
+                    addCaseForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const newCase = {
+                            date: document.getElementById('caseDate').value,
+                            attending: document.getElementById('attending').value,
+                            diagnosis: document.getElementById('diagnosis').value,
+                            procedure: document.getElementById('procedure').value,
+                            createdAt: new Date(),
+                            addedBy: userId
+                        };
+                        try {
+                            await addDoc(casesCollectionRef, newCase);
+                            addCaseForm.reset();
+                        } catch (error) {
+                            console.error("Error adding document: ", error);
+                        }
+                    });
+                    
+                    caseListBody.addEventListener('click', async (e) => {
+                        if (e.target.classList.contains('delete-btn')) {
+                            const caseId = e.target.getAttribute('data-id');
+                            try {
+                                await deleteDoc(doc(db, `artifacts/${appId}/public/data/cases`, caseId));
+                            } catch (error) {
+                                console.error("Error removing document: ", error);
+                            }
+                        }
+                    });
+
+                    clearAllCasesBtn.addEventListener('click', async () => {
+                        if (prompt("This will delete all cases permanently. Type 'DELETE' to confirm.") === 'DELETE') {
+                            try {
+                                const querySnapshot = await getDocs(casesCollectionRef);
+                                const batch = writeBatch(db);
+                                querySnapshot.forEach((doc) => batch.delete(doc.ref));
+                                await batch.commit();
+                            } catch (error) {
+                                console.error("Error clearing all documents: ", error);
+                            }
+                        }
+                    });
+
+                } else {
+                    console.log("User is not authenticated. Trying to sign in anonymously.");
+                    signInAnonymously(auth).catch((error) => {
+                        console.error("Anonymous sign-in failed:", error);
+                         if (error.code === 'auth/operation-not-allowed' || error.code === 'auth/configuration-not-found') {
+                             firebaseErrorBanner.innerHTML = '<strong>Action Required:</strong> Real-time features are disabled. Please go to your Firebase project, navigate to the Authentication -> Sign-in method tab, and enable the "Anonymous" sign-in provider.';
+                         } else {
+                            firebaseErrorBanner.textContent = 'Connection Error: Real-time features could not be initialized. Please check the console for details.';
+                         }
+                         firebaseErrorBanner.classList.remove('hidden');
+                         addCaseForm.style.display = 'none';
+                         document.getElementById('clear-all-cases-btn').style.display = 'none';
+                    });
+                }
+            });
+        };
+
+        const initializeChatbot = () => {
+             const caseDetailsInput = document.getElementById('caseDetails');
+            const chatWindow = document.getElementById('chat-window');
+            const chatInput = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+            const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+            const generateQuestionsBtn = document.getElementById('generateQuestionsBtn');
+            
+            const allButtons = [sendBtn, generateSummaryBtn, generateQuestionsBtn];
+
+            const addMessage = (message, sender) => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('chat-message', sender === 'user' ? 'user-message' : 'bot-message');
+                messageElement.textContent = message;
+                chatWindow.appendChild(messageElement);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
             };
 
-            const initializeChatbot = () => {
-                 const caseDetailsInput = document.getElementById('caseDetails');
-                const chatWindow = document.getElementById('chat-window');
-                const chatInput = document.getElementById('chat-input');
-                const sendBtn = document.getElementById('send-btn');
-                const generateSummaryBtn = document.getElementById('generateSummaryBtn');
-                const generateQuestionsBtn = document.getElementById('generateQuestionsBtn');
+            const callGemini = async (userQuery) => {
+                allButtons.forEach(btn => btn.disabled = true);
+                addMessage('Thinking...', 'bot');
+
+                const caseContext = caseDetailsInput.value;
+                if (!caseContext.trim()) {
+                    addMessage('Please provide the case context in the text area above before asking questions.', 'bot');
+                    allButtons.forEach(btn => btn.disabled = false);
+                    chatWindow.removeChild(chatWindow.lastChild);
+                    return;
+                }
                 
-                const allButtons = [sendBtn, generateSummaryBtn, generateQuestionsBtn];
+                const apiUrl = `/.netlify/functions/gemini-proxy`;
+                const systemPrompt = `You are an expert surgical oncology assistant. Based on the following case context, please answer the user's question. \n\nCONTEXT:\n${caseContext}\n\nQUESTION:\n`;
 
-                const addMessage = (message, sender) => {
-                    const messageElement = document.createElement('div');
-                    messageElement.classList.add('chat-message', sender === 'user' ? 'user-message' : 'bot-message');
-                    messageElement.textContent = message;
-                    chatWindow.appendChild(messageElement);
-                    chatWindow.scrollTop = chatWindow.scrollHeight;
-                };
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            prompt: systemPrompt,
+                            text: userQuery
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    chatWindow.removeChild(chatWindow.lastChild); 
 
-                const callGemini = async (userQuery) => {
-                    allButtons.forEach(btn => btn.disabled = true);
-                    addMessage('Thinking...', 'bot');
-
-                    const caseContext = caseDetailsInput.value;
-                    if (!caseContext.trim()) {
-                        addMessage('Please provide the case context in the text area above before asking questions.', 'bot');
-                        allButtons.forEach(btn => btn.disabled = false);
-                        chatWindow.removeChild(chatWindow.lastChild);
-                        return;
+                    if (!response.ok) {
+                        const errorMsg = result.error || `API request failed with status ${response.status}`;
+                        throw new Error(errorMsg);
                     }
                     
-                    const apiUrl = `/.netlify/functions/gemini-proxy`;
-                    const systemPrompt = `You are an expert surgical oncology assistant. Based on the following case context, please answer the user's question. \n\nCONTEXT:\n${caseContext}\n\nQUESTION:\n`;
-
-                    try {
-                        const response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                                prompt: systemPrompt,
-                                text: userQuery
-                            })
-                        });
-                        
-                        const result = await response.json();
-                        chatWindow.removeChild(chatWindow.lastChild); 
-
-                        if (!response.ok) {
-                            const errorMsg = result.error || `API request failed with status ${response.status}`;
-                            throw new Error(errorMsg);
-                        }
-                        
-                        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content?.parts?.length > 0) {
-                            const text = result.candidates[0].content.parts[0].text;
-                            addMessage(text, 'bot');
-                        } else {
-                            addMessage('Error: Could not retrieve a valid response from the AI. Please try again.', 'bot');
-                            console.error('Unexpected API response structure:', result);
-                        }
-                    } catch (error) {
-                        console.error('Error calling Netlify function:', error);
-                        chatWindow.removeChild(chatWindow.lastChild);
-                        addMessage(`An error occurred: ${error.message}. Check the console for more details.`, 'bot');
-                    } finally {
-                        allButtons.forEach(btn => btn.disabled = false);
+                    if (result.candidates && result.candidates.length > 0 && result.candidates[0].content?.parts?.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        addMessage(text, 'bot');
+                    } else {
+                        addMessage('Error: Could not retrieve a valid response from the AI. Please try again.', 'bot');
+                        console.error('Unexpected API response structure:', result);
                     }
-                };
-                
-                const handleSend = () => {
-                    const userQuery = chatInput.value.trim();
-                    if (userQuery) {
-                        addMessage(userQuery, 'user');
-                        callGemini(userQuery);
-                        chatInput.value = '';
-                    }
-                };
-
-                sendBtn.addEventListener('click', handleSend);
-                chatInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') handleSend();
-                });
-
-                generateSummaryBtn.addEventListener('click', () => {
-                    const query = "Generate a concise case summary for a preoperative conference presentation. Structure the summary with these headings: Indication for Surgery, Anatomic Considerations, Proposed Surgical Approach, and Staging Implications.";
-                    addMessage("Generate Case Summary", "user");
-                    callGemini(query);
-                });
-
-                generateQuestionsBtn.addEventListener('click', () => {
-                    const query = "Generate 3-5 thought-provoking discussion questions suitable for an attending to ask residents and medical students during a preoperative conference. The questions should probe critical thinking about surgical approach, potential complications, and alternative management strategies.";
-                    addMessage("Generate Discussion Questions", "user");
-                    callGemini(query);
-                });
-
-                addMessage("Hello! Please enter the case details above. You can then click a button for common tasks or ask me any question about the case.", 'bot');
+                } catch (error) {
+                    console.error('Error calling Netlify function:', error);
+                    chatWindow.removeChild(chatWindow.lastChild);
+                    addMessage(`An error occurred: ${error.message}. Check the console for more details.`, 'bot');
+                } finally {
+                    allButtons.forEach(btn => btn.disabled = false);
+                }
+            };
+            
+            const handleSend = () => {
+                const userQuery = chatInput.value.trim();
+                if (userQuery) {
+                    addMessage(userQuery, 'user');
+                    callGemini(userQuery);
+                    chatInput.value = '';
+                }
             };
 
-            // Initialize all parts of the page
+            sendBtn.addEventListener('click', handleSend);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleSend();
+            });
+
+            generateSummaryBtn.addEventListener('click', () => {
+                const query = "Generate a concise case summary for a preoperative conference presentation. Structure the summary with these headings: Indication for Surgery, Anatomic Considerations, Proposed Surgical Approach, and Staging Implications.";
+                addMessage("Generate Case Summary", "user");
+                callGemini(query);
+            });
+
+            generateQuestionsBtn.addEventListener('click', () => {
+                const query = "Generate 3-5 thought-provoking discussion questions suitable for an attending to ask residents and medical students during a preoperative conference. The questions should probe critical thinking about surgical approach, potential complications, and alternative management strategies.";
+                addMessage("Generate Discussion Questions", "user");
+                callGemini(query);
+            });
+
+            addMessage("Hello! Please enter the case details above. You can then click a button for common tasks or ask me any question about the case.", 'bot');
+        };
+
+        // Initialize all parts of the page
+        document.addEventListener('DOMContentLoaded', () => {
             initializeCharts();
             initializeDynamicFeatures();
             initializeChatbot();
