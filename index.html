@@ -263,7 +263,6 @@
                     <div class="flex flex-wrap gap-4 justify-center mb-6">
                         <button id="generateSummaryBtn" class="ai-button">✨ Generate Case Summary</button>
                         <button id="generateQuestionsBtn" class="ai-button">✨ Generate Discussion Questions</button>
-                        <button id="generateStagingBtn" class="ai-button">✨ Stage Patient (AJCC 8th Ed.)</button>
                     </div>
                     <div id="loaderContainer" class="flex justify-center my-4 hidden">
                         <div class="loader"></div>
@@ -283,11 +282,10 @@
             const caseDetailsInput = document.getElementById('caseDetails');
             const generateSummaryBtn = document.getElementById('generateSummaryBtn');
             const generateQuestionsBtn = document.getElementById('generateQuestionsBtn');
-            const generateStagingBtn = document.getElementById('generateStagingBtn');
             const loaderContainer = document.getElementById('loaderContainer');
             const aiOutput = document.getElementById('aiOutput');
             
-            const allButtons = [generateSummaryBtn, generateQuestionsBtn, generateStagingBtn];
+            const allButtons = [generateSummaryBtn, generateQuestionsBtn];
 
             const callGemini = async (prompt) => {
                 allButtons.forEach(btn => btn.disabled = true);
@@ -350,16 +348,6 @@
             generateQuestionsBtn.addEventListener('click', () => {
                 const questionsPrompt = "Based on the following surgical oncology case details, generate 3-5 thought-provoking discussion questions suitable for an attending to ask residents and medical students during a preoperative conference. The questions should probe critical thinking about surgical approach, potential complications, and alternative management strategies.";
                 callGemini(questionsPrompt);
-            });
-            
-            generateStagingBtn.addEventListener('click', () => {
-                const stagingPrompt = `You are an expert in surgical oncology. Based on the provided case details, determine the clinical stage using the most recent AJCC 8th Edition cancer staging system. 
-                For melanoma, pay close attention to Breslow thickness and the presence or absence of ulceration.
-                For other cancers, use the relevant primary prognostic factors.
-                If sufficient pathological information is provided, also determine the pathological stage. 
-                Clearly label the T, N, and M components and the overall stage group.
-                If key information for staging is missing, explicitly state what information is needed to provide a definitive stage.`;
-                callGemini(stagingPrompt);
             });
 
             const wrapLabel = (str, maxLen = 16) => {
