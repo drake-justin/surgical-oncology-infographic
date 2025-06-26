@@ -301,12 +301,11 @@
                     return;
                 }
                 
-                // This is the secure URL for your Netlify Function endpoint.
-                // The API key is now handled on the server side by this function.
-                const apiUrl = `/.netlify/functions/gemini-proxy`;
+                // This URL points to the new API path defined in netlify.toml.
+                // It proxies the request to your gemini-proxy Netlify function.
+                const apiUrl = `/api/gemini-proxy`;
 
                 try {
-                    // Send the prompt and text to your secure Netlify function.
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
