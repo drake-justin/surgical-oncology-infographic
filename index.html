@@ -260,9 +260,10 @@
                         <label for="caseDetails" class="block mb-2 font-bold font-headline text-lg">Case Details:</label>
                         <textarea id="caseDetails" class="ai-input" rows="6" placeholder="Example: 58 y/o male with a 4cm mass in the pancreatic head, biopsy-proven adenocarcinoma. Plan for Whipple procedure. No distant metastatic disease on imaging..."></textarea>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+                    <div class="flex flex-wrap gap-4 justify-center mb-6">
                         <button id="generateSummaryBtn" class="ai-button">✨ Generate Case Summary</button>
                         <button id="generateQuestionsBtn" class="ai-button">✨ Generate Discussion Questions</button>
+                        <button id="generateStagingBtn" class="ai-button">✨ Stage Patient (AJCC 8th Ed.)</button>
                     </div>
                     <div id="loaderContainer" class="flex justify-center my-4 hidden">
                         <div class="loader"></div>
@@ -282,12 +283,14 @@
             const caseDetailsInput = document.getElementById('caseDetails');
             const generateSummaryBtn = document.getElementById('generateSummaryBtn');
             const generateQuestionsBtn = document.getElementById('generateQuestionsBtn');
+            const generateStagingBtn = document.getElementById('generateStagingBtn');
             const loaderContainer = document.getElementById('loaderContainer');
             const aiOutput = document.getElementById('aiOutput');
             
+            const allButtons = [generateSummaryBtn, generateQuestionsBtn, generateStagingBtn];
+
             const callGemini = async (prompt) => {
-                generateSummaryBtn.disabled = true;
-                generateQuestionsBtn.disabled = true;
+                allButtons.forEach(btn => btn.disabled = true);
                 aiOutput.classList.add('hidden');
                 loaderContainer.classList.remove('hidden');
 
@@ -296,8 +299,7 @@
                     aiOutput.textContent = 'Please enter case details before generating.';
                     aiOutput.classList.remove('hidden');
                     loaderContainer.classList.add('hidden');
-                    generateSummaryBtn.disabled = false;
-                    generateQuestionsBtn.disabled = false;
+                    allButtons.forEach(btn => btn.disabled = false);
                     return;
                 }
                 
@@ -336,8 +338,7 @@
                 } finally {
                     loaderContainer.classList.add('hidden');
                     aiOutput.classList.remove('hidden');
-                    generateSummaryBtn.disabled = false;
-                    generateQuestionsBtn.disabled = false;
+                    allButtons.forEach(btn => btn.disabled = false);
                 }
             };
             
@@ -349,6 +350,11 @@
             generateQuestionsBtn.addEventListener('click', () => {
                 const questionsPrompt = "Based on the following surgical oncology case details, generate 3-5 thought-provoking discussion questions suitable for an attending to ask residents and medical students during a preoperative conference. The questions should probe critical thinking about surgical approach, potential complications, and alternative management strategies.";
                 callGemini(questionsPrompt);
+            });
+            
+            generateStagingBtn.addEventListener('click', () => {
+                const stagingPrompt = "Based on the provided case details, determine the clinical stage using the AJCC 8th Edition cancer staging system. If sufficient pathological information is provided, also determine the pathological stage. Clearly label the T, N, and M components and the overall stage group.";
+                callGemini(stagingPrompt);
             });
 
             const wrapLabel = (str, maxLen = 16) => {
