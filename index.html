@@ -353,7 +353,12 @@
             });
             
             generateStagingBtn.addEventListener('click', () => {
-                const stagingPrompt = "Based on the provided case details, determine the clinical stage using the AJCC 8th Edition cancer staging system. If sufficient pathological information is provided, also determine the pathological stage. Clearly label the T, N, and M components and the overall stage group.";
+                const stagingPrompt = `You are an expert in surgical oncology. Based on the provided case details, determine the clinical stage using the most recent AJCC 8th Edition cancer staging system. 
+                For melanoma, pay close attention to Breslow thickness and the presence or absence of ulceration.
+                For other cancers, use the relevant primary prognostic factors.
+                If sufficient pathological information is provided, also determine the pathological stage. 
+                Clearly label the T, N, and M components and the overall stage group.
+                If key information for staging is missing, explicitly state what information is needed to provide a definitive stage.`;
                 callGemini(stagingPrompt);
             });
 
