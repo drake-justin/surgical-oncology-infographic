@@ -558,6 +558,7 @@
                 }
             };
             
+            // --- Dynamic Features Initialization ---
             const initializeDynamicFeatures = () => {
                 const firebaseConfig = {
                   apiKey: "AIzaSyAGBUz_LbfSJLryVjiuCD9siqfP-hpWYSo",
@@ -577,7 +578,6 @@
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        // User is signed in.
                         const userId = user.uid;
                         const appId = firebaseConfig.projectId;
                         const casesCollectionRef = collection(db, `artifacts/${appId}/public/data/cases`);
@@ -649,7 +649,6 @@
                         });
 
                     } else {
-                        // User is signed out.
                         console.log("User is not authenticated. Trying to sign in anonymously.");
                         signInAnonymously(auth).catch((error) => {
                             console.error("Anonymous sign-in failed:", error);
@@ -762,6 +761,7 @@
                 addMessage("Hello! Please enter the case details above. You can then click a button for common tasks or ask me any question about the case.", 'bot');
             };
 
+            // Initialize all parts of the page
             initializeCharts();
             initializeDynamicFeatures();
             initializeChatbot();
