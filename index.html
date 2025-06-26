@@ -438,8 +438,8 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, getDocs, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        document.addEventListener('DOMContentLoaded', () => {
-            
+        function initializePage() {
+            // --- Chart Initialization ---
             const initializeCharts = () => {
                 const wrapLabel = (str, maxLen = 16) => {
                     if (str.length <= maxLen) return str;
@@ -477,7 +477,7 @@
                 Chart.defaults.color = '#FFFFFF';
 
                 const agendaCtx = document.getElementById('agendaChart');
-                if(agendaCtx) {
+                if (agendaCtx) {
                     new Chart(agendaCtx, {
                         type: 'doughnut',
                         data: {
@@ -510,7 +510,7 @@
                 }
 
                 const discussionCtx = document.getElementById('discussionChart');
-                if(discussionCtx) {
+                if (discussionCtx) {
                     new Chart(discussionCtx, {
                         type: 'radar',
                         data: {
@@ -556,6 +556,7 @@
                 }
             };
             
+            // --- Dynamic Features Initialization (Firebase & Chatbot) ---
             const initializeDynamicFeatures = async () => {
                 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
                 if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
@@ -744,7 +745,9 @@
 
             initializeCharts();
             initializeDynamicFeatures();
-        });
+        }
+
+        document.addEventListener('DOMContentLoaded', initializePage);
     </script>
 
 </body>
