@@ -115,13 +115,19 @@
             display: flex;
             gap: 1rem;
         }
-        #chat-input {
-            flex-grow: 1;
+        #chat-input, #caseDetails {
             background-color: #41215E;
             color: #FFFFFF;
             border: 1px solid #77216F;
             border-radius: 0.5rem;
             padding: 0.75rem;
+        }
+        #chat-input {
+             flex-grow: 1;
+        }
+        #caseDetails {
+            width: 100%;
+            margin-bottom: 1rem;
         }
         #send-btn {
             background-color: #FEC923;
@@ -275,9 +281,8 @@
             <section id="ai-assistant" class="mb-12">
                 <h2 class="text-3xl font-bold text-center mb-10 text-[#FEC923] font-headline">AI-Powered Case Prep Chatbot</h2>
                 <div class="ai-assistant-container max-w-4xl mx-auto">
-                    <div class="mb-4">
-                        <label for="caseDetails" class="block mb-2 font-bold font-headline text-lg">Step 1: Provide Case Context</label>
-                        <textarea id="caseDetails" class="ai-input" rows="6" placeholder="Enter the patient's case details here first. This context will be used for all your questions below. Example: 58 y/o male with a 4cm mass in the pancreatic head..."></textarea>
+                    <div>
+                        <textarea id="caseDetails" rows="6" placeholder="Step 1: Provide Case Context here first. This context will be used for all your questions below. Example: 58 y/o male with a 4cm mass in the pancreatic head..."></textarea>
                     </div>
                     <div id="chat-window" class="flex flex-col">
                         <!-- Chat messages will be appended here -->
