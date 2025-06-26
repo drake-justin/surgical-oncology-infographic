@@ -1,0 +1,14 @@
+# This is a configuration file for Netlify.
+# It provides explicit rules for how to handle requests.
+
+[build]
+  # This tells Netlify where your serverless functions are located.
+  functions = "netlify/functions"
+
+[[redirects]]
+  # This rule proxies all requests from "/api/*" to the corresponding
+  # Netlify Function. This is a best practice for routing API calls
+  # and can resolve many CORS-related issues.
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
