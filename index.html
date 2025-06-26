@@ -22,7 +22,7 @@
     4.  Data: Weekly Conference Workflow -> Goal: Organize (Process) -> Visualization: Custom Flowchart.
     5.  Data: Meeting Agenda Time Allocation -> Goal: Compare (Composition) -> Visualization: Donut Chart (Chart.js/Canvas).
     6.  Data: Core Case Discussion Points -> Goal: Compare (Attributes) -> Visualization: Radar Chart (Chart.js/Canvas).
-    7.  Feature: AI Case Prep -> Goal: Assist -> Visualization: Interactive Form with Gemini API integration via a secure Netlify Function.
+    7.  Feature: AI Case Prep -> Goal: Assist -> Visualization: Interactive Chatbot with Gemini API integration via a secure Netlify Function.
 
     Final Confirmation: NEITHER Mermaid JS NOR SVG were used anywhere in the output. All visuals are pure HTML/CSS or rendered on HTML Canvas elements by Chart.js.
     -->
@@ -81,16 +81,49 @@
             border: 1px solid #592A8A;
             border-radius: 0.75rem;
             padding: 2rem;
+            display: flex;
+            flex-direction: column;
         }
-        .ai-input, .ai-output {
+        #chat-window {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #77216F;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            background-color: #41215E;
+            margin-bottom: 1rem;
+        }
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #592A8A;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .bot-message {
+            background-color: #6C6D68;
+            color: white;
+            align-self: flex-start;
+        }
+        .chat-input-container {
+            display: flex;
+            gap: 1rem;
+        }
+        #chat-input {
+            flex-grow: 1;
             background-color: #41215E;
             color: #FFFFFF;
             border: 1px solid #77216F;
             border-radius: 0.5rem;
-            padding: 1rem;
-            width: 100%;
+            padding: 0.75rem;
         }
-        .ai-button {
+        #send-btn {
             background-color: #FEC923;
             color: #41215E;
             font-family: 'Oswald', sans-serif;
@@ -101,25 +134,12 @@
             border: none;
             cursor: pointer;
         }
-        .ai-button:hover {
+        #send-btn:hover {
             background-color: #EAC01E;
         }
-        .ai-button:disabled {
+        #send-btn:disabled {
             background-color: #6C6D68;
-            color: #A9A9A9;
             cursor: not-allowed;
-        }
-        .loader {
-            border: 4px solid #592A8A;
-            border-top: 4px solid #FEC923;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -253,21 +273,19 @@
             </section>
 
             <section id="ai-assistant" class="mb-12">
-                <h2 class="text-3xl font-bold text-center mb-10 text-[#FEC923] font-headline">AI-Powered Case Prep Assistant</h2>
+                <h2 class="text-3xl font-bold text-center mb-10 text-[#FEC923] font-headline">AI-Powered Case Prep Chatbot</h2>
                 <div class="ai-assistant-container max-w-4xl mx-auto">
-                    <p class="text-center text-gray-300 mb-6">Use the tools below to accelerate case preparation. Enter key patient data, diagnosis, and the planned procedure, then let the AI assistant help you build a presentation or formulate discussion points.</p>
                     <div class="mb-4">
-                        <label for="caseDetails" class="block mb-2 font-bold font-headline text-lg">Case Details:</label>
-                        <textarea id="caseDetails" class="ai-input" rows="6" placeholder="Example: 58 y/o male with a 4cm mass in the pancreatic head, biopsy-proven adenocarcinoma. Plan for Whipple procedure. No distant metastatic disease on imaging..."></textarea>
+                        <label for="caseDetails" class="block mb-2 font-bold font-headline text-lg">Step 1: Provide Case Context</label>
+                        <textarea id="caseDetails" class="ai-input" rows="6" placeholder="Enter the patient's case details here first. This context will be used for all your questions below. Example: 58 y/o male with a 4cm mass in the pancreatic head..."></textarea>
                     </div>
-                    <div class="flex flex-wrap gap-4 justify-center mb-6">
-                        <button id="generateSummaryBtn" class="ai-button">✨ Generate Case Summary</button>
-                        <button id="generateQuestionsBtn" class="ai-button">✨ Generate Discussion Questions</button>
+                    <div id="chat-window" class="flex flex-col">
+                        <!-- Chat messages will be appended here -->
                     </div>
-                    <div id="loaderContainer" class="flex justify-center my-4 hidden">
-                        <div class="loader"></div>
+                    <div class="chat-input-container">
+                        <input type="text" id="chat-input" placeholder="Step 2: Ask a question... (e.g., 'Summarize this case')">
+                        <button id="send-btn">Send</button>
                     </div>
-                    <div id="aiOutput" class="ai-output min-h-[150px] whitespace-pre-wrap hidden"></div>
                 </div>
             </section>
         </main>
@@ -280,41 +298,49 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const caseDetailsInput = document.getElementById('caseDetails');
-            const generateSummaryBtn = document.getElementById('generateSummaryBtn');
-            const generateQuestionsBtn = document.getElementById('generateQuestionsBtn');
-            const loaderContainer = document.getElementById('loaderContainer');
-            const aiOutput = document.getElementById('aiOutput');
+            const chatWindow = document.getElementById('chat-window');
+            const chatInput = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
             
-            const allButtons = [generateSummaryBtn, generateQuestionsBtn];
+            const addMessage = (message, sender) => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('chat-message', sender === 'user' ? 'user-message' : 'bot-message');
+                messageElement.textContent = message;
+                chatWindow.appendChild(messageElement);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            };
 
-            const callGemini = async (prompt) => {
-                allButtons.forEach(btn => btn.disabled = true);
-                aiOutput.classList.add('hidden');
-                loaderContainer.classList.remove('hidden');
+            const callGemini = async (userQuery) => {
+                sendBtn.disabled = true;
+                addMessage('Thinking...', 'bot');
 
-                const userText = caseDetailsInput.value;
-                if (!userText.trim()) {
-                    aiOutput.textContent = 'Please enter case details before generating.';
-                    aiOutput.classList.remove('hidden');
-                    loaderContainer.classList.add('hidden');
-                    allButtons.forEach(btn => btn.disabled = false);
+                const caseContext = caseDetailsInput.value;
+                if (!caseContext.trim()) {
+                    addMessage('Please provide the case context in the text area above before asking questions.', 'bot');
+                    sendBtn.disabled = false;
+                    chatWindow.removeChild(chatWindow.lastChild); // Remove "Thinking..."
                     return;
                 }
                 
-                // Calling the Netlify function directly at its default endpoint.
+                // This is the secure URL for your Netlify Function endpoint.
                 const apiUrl = `/.netlify/functions/gemini-proxy`;
+
+                // The prompt combines a role, the case context, and the user's specific query.
+                const fullPrompt = `You are an expert surgical oncology assistant. Based on the following case context, please answer the user's question. \n\nCONTEXT:\n${caseContext}\n\nQUESTION:\n${userQuery}`;
 
                 try {
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
-                            prompt: prompt,
-                            text: userText 
+                            // The Netlify function expects a "prompt" key, but we're sending the full context here.
+                            prompt: fullPrompt,
+                            text: "" // The 'text' field is no longer needed as context is in the prompt
                         })
                     });
                     
                     const result = await response.json();
+                    chatWindow.removeChild(chatWindow.lastChild); // Remove "Thinking..."
 
                     if (!response.ok) {
                         const errorMsg = result.error || `API request failed with status ${response.status}`;
@@ -325,30 +351,38 @@
                         result.candidates[0].content && result.candidates[0].content.parts &&
                         result.candidates[0].content.parts.length > 0) {
                         const text = result.candidates[0].content.parts[0].text;
-                        aiOutput.textContent = text;
+                        addMessage(text, 'bot');
                     } else {
-                        aiOutput.textContent = 'Error: Could not retrieve a valid response from the AI. Please try again.';
+                        addMessage('Error: Could not retrieve a valid response from the AI. Please try again.', 'bot');
                         console.error('Unexpected API response structure:', result);
                     }
                 } catch (error) {
                     console.error('Error calling Netlify function:', error);
-                    aiOutput.textContent = `An error occurred: ${error.message}. Check the console for more details.`;
+                    chatWindow.removeChild(chatWindow.lastChild); // Remove "Thinking..."
+                    addMessage(`An error occurred: ${error.message}. Check the console for more details.`, 'bot');
                 } finally {
-                    loaderContainer.classList.add('hidden');
-                    aiOutput.classList.remove('hidden');
-                    allButtons.forEach(btn => btn.disabled = false);
+                    sendBtn.disabled = false;
                 }
             };
             
-            generateSummaryBtn.addEventListener('click', () => {
-                const summaryPrompt = "Based on the following surgical oncology case details, generate a concise case summary for a preoperative conference presentation. Structure the summary with these headings: Indication for Surgery, Anatomic Considerations, Proposed Surgical Approach, and Staging Implications.";
-                callGemini(summaryPrompt);
+            const handleSend = () => {
+                const userQuery = chatInput.value.trim();
+                if (userQuery) {
+                    addMessage(userQuery, 'user');
+                    callGemini(userQuery);
+                    chatInput.value = '';
+                }
+            };
+
+            sendBtn.addEventListener('click', handleSend);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleSend();
+                }
             });
 
-            generateQuestionsBtn.addEventListener('click', () => {
-                const questionsPrompt = "Based on the following surgical oncology case details, generate 3-5 thought-provoking discussion questions suitable for an attending to ask residents and medical students during a preoperative conference. The questions should probe critical thinking about surgical approach, potential complications, and alternative management strategies.";
-                callGemini(questionsPrompt);
-            });
+            addMessage("Hello! Please enter the case details above. Then, you can ask me to summarize the case, list discussion questions, or ask anything else about the patient.", 'bot');
+
 
             const wrapLabel = (str, maxLen = 16) => {
                 if (str.length <= maxLen) {
